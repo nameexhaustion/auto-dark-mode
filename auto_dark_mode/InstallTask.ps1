@@ -1,6 +1,6 @@
 param (
     [string] ${shell} = 'powershell.exe',
-    [string] ${updateModeScriptPath} = "$(Get-Location)/auto_dark_mode/UpdateMode.ps1",
+    [string] ${setModeScriptPath} = "$(Get-Location)/auto_dark_mode/SetMode.ps1",
     [datetime] ${lightModeStart} = '09:00',
     [datetime] ${darkModeStart} = '17:00'
 )
@@ -17,7 +17,7 @@ function New-ModeTask {
     )
 
     [string] ${userId} = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-    [string] ${argument} = "-windowstyle hidden -command ${updateModeScriptPath} ${modeInt}"
+    [string] ${argument} = "-windowstyle hidden -command ${setModeScriptPath} ${modeInt}"
     [CimInstance] ${action} = New-ScheduledTaskAction -WorkingDirectory $(Get-Location) -Execute ${shell} -Argument ${argument}
     [CimInstance] ${trigger} = New-ScheduledTaskTrigger -Daily -At ${time}
     [CimInstance] ${principal} = New-ScheduledTaskPrincipal -UserId "${userId}" -LogonType S4U
@@ -58,10 +58,10 @@ Register-ScheduledTask ${taskId} -InputObject ${task}
 
 [hashtable[]] ${bounds} = ${arr} | Sort-Object -Property time
 [datetime[]] ${boundsTime} = ${arr} | ForEach-Object { ${_}['time'] }
+[scriptblock] ${f} = ${bounds}[1]['f']
 
 if (${time} -gt ${boundsTime}[0] -and ${time} -lt ${boundsTime}[1]) {
-    Invoke-Command ${bounds}[0]['f']
+    ${f} = ${bounds}[0]['f']
 }
-else {
-    Invoke-Command ${bounds}[1]['f']
-}
+
+Invoke-Command ${f}
