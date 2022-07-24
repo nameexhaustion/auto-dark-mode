@@ -1,8 +1,8 @@
 param (
     [string] ${shell} = 'powershell.exe',
     [string] ${updateModeScriptPath} = "$(Get-Location)/auto_dark_mode/UpdateMode.ps1",
-    [datetime] ${timeDarkMode} = '17:00',
-    [datetime] ${timeLightMode} = '09:00'
+    [datetime] ${timeLightMode} = '09:00',
+    [datetime] ${timeDarkMode} = '17:00'
 )
 
 . auto_dark_mode/Configs.ps1
@@ -26,24 +26,42 @@ function New-ModeTask {
     return ${task}
 }
 
+[datetime] ${time} = ${timeLightMode}
+[string] ${taskId} = ${taskIdLightMode}
+[string] ${taskDescription} = "Set light mode at ${time}"
+[CimInstance] ${task} = New-ModeTask -modeInt 1 -time ${time} -taskDescription ${taskDescription}
+Register-ScheduledTask ${taskId} -InputObject ${task}
+
 [datetime] ${time} = ${timeDarkMode}
 [string] ${taskId} = ${taskIdDarkMode}
 [string] ${taskDescription} = "Set dark mode at ${time}"
 [CimInstance] ${task} = New-ModeTask -modeInt 0 -time ${time} -taskDescription ${taskDescription}
 Register-ScheduledTask ${taskId} -InputObject ${task}
 
-[datetime] ${time} = ${timeLightMode}
-[string] ${taskId} = ${taskIdLightMode}
-[string] ${taskDescription} = "Set light mode at ${time}"
-[CimInstance] ${task} = New-ModeTask -modeInt 1 -time ${time} -taskDescription ${taskDescription}
-[CimInstance] ${x} = Register-ScheduledTask ${taskId} -InputObject ${task}
-Write-Output ${x}
-
 [string] ${taskName} = ${taskIdDarkMode}
 [datetime] ${time} = (Get-Date).AddMinutes(1)
 
-if (${time} -gt ${timeLightMode} -and ${time} -lt ${timeDarkMode}) {
-    ${taskName} = ${taskIdLightMode}
-}
+[hashtable[]] ${arr} = @(
+    @{
+        'time' = [string]${timeLightMode}
+        'f'    = [scriptblock] {
+            Start-ScheduledTask -TaskName ${taskIdLightMode}
+        }
+    }
+    @{
+        'time' = [string]${timeDarkMode}
+        'f'    = [scriptblock] {
+            Start-ScheduledTask -TaskName ${taskIdDarkMode}
+        }
+    }
+)
 
-Start-ScheduledTask -TaskName ${taskName}
+[hashtable[]] ${bounds} = ${arr} | Sort-Object -Property time
+[datetime[]] ${boundsTime} = ${arr} | ForEach-Object { ${_}['time'] }
+
+if (${time} -gt ${boundsTime}[0] -and ${time} -lt ${boundsTime}[1]) {
+    Invoke-Command ${bounds}[0]['f']
+}
+else {
+    Invoke-Command ${bounds}[1]['f']
+}
