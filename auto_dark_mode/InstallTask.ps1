@@ -19,9 +19,10 @@ function New-ModeTask {
     [string] ${userId} = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
     [string] ${argument} = "-windowstyle hidden -command ${setModeScriptPath} ${modeInt}"
     [CimInstance] ${action} = New-ScheduledTaskAction -WorkingDirectory $(Get-Location) -Execute ${shell} -Argument ${argument}
-    [CimInstance] ${trigger} = New-ScheduledTaskTrigger -Daily -At ${time}
+    [CimInstance] ${settings} = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries
     [CimInstance] ${principal} = New-ScheduledTaskPrincipal -UserId "${userId}" -LogonType S4U
-    [CimInstance] ${task} = New-ScheduledTask -Principal ${principal} -Action ${action} -Trigger ${trigger} -Description "${taskDescription}"
+    [CimInstance] ${trigger} = New-ScheduledTaskTrigger -Daily -At ${time}
+    [CimInstance] ${task} = New-ScheduledTask -Action ${action} -Settings ${settings} -Principal ${principal} -Trigger ${trigger} -Description "${taskDescription}"
 
     return ${task}
 }
