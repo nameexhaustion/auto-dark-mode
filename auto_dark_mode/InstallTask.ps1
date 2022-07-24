@@ -39,7 +39,6 @@ Register-ScheduledTask ${taskId} -InputObject ${task}
 [CimInstance] ${x} = Register-ScheduledTask ${taskId} -InputObject ${task}
 Write-Output ${x}
 
-
 [string] ${taskName} = ${taskIdDarkMode}
 [datetime] ${time} = (Get-Date).AddMinutes(1)
 
