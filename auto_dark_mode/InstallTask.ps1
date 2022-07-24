@@ -1,12 +1,18 @@
+[CmdletBinding()]
 param (
     [string] ${shell} = 'powershell.exe',
-    [string] ${setModeScriptPath} = "$(Get-Location)/auto_dark_mode/SetMode.ps1",
     [datetime] ${lightModeStart} = '09:00',
     [datetime] ${darkModeStart} = '17:00'
 )
 
-. auto_dark_mode/Configs.ps1
-./auto_dark_mode/RemoveTask.ps1
+[string] ${setModeScriptPath} = "$(Get-Location)/auto_dark_mode/SetMode.ps1"
+[string] ${syncModeScriptPath} = "$(Get-Location)/auto_dark_mode/SyncMode.ps1"
+[string] ${userId} = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+[CimInstance] ${principal} = New-ScheduledTaskPrincipal -UserId "${userId}" -LogonType S4U
+
+. auto_dark_mode/Config.ps1
+New-Item -ItemType directory -Force private
+./auto_dark_mode/UninstallTask.ps1
 
 function New-ModeTask {
     [CmdletBinding()]
@@ -16,12 +22,11 @@ function New-ModeTask {
         [string] ${taskDescription}
     )
 
-    [string] ${userId} = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-    [string] ${argument} = "-windowstyle hidden -command ${setModeScriptPath} ${modeInt}"
+    [string] ${argument} = "-command ${setModeScriptPath} ${modeInt}"
     [CimInstance] ${action} = New-ScheduledTaskAction -WorkingDirectory $(Get-Location) -Execute ${shell} -Argument ${argument}
+    [CimInstance] ${settings} = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries
     [CimInstance] ${trigger} = New-ScheduledTaskTrigger -Daily -At ${time}
-    [CimInstance] ${principal} = New-ScheduledTaskPrincipal -UserId "${userId}" -LogonType S4U
-    [CimInstance] ${task} = New-ScheduledTask -Principal ${principal} -Action ${action} -Trigger ${trigger} -Description "${taskDescription}"
+    [CimInstance] ${task} = New-ScheduledTask -Action ${action} -Settings ${settings} -Principal ${principal} -Trigger ${trigger} -Description "${taskDescription}"
 
     return ${task}
 }
@@ -38,29 +43,31 @@ Register-ScheduledTask ${taskId} -InputObject ${task}
 [CimInstance] ${task} = New-ModeTask -modeInt 0 -time ${time} -taskDescription ${taskDescription}
 Register-ScheduledTask ${taskId} -InputObject ${task}
 
-[datetime] ${time} = (Get-Date).AddMinutes(1)
+[string] ${taskId} = ${taskIdSync}
+[string] ${taskDescription} = 'Sync system theme mode'
+[string] ${argument} = "-command ${syncModeScriptPath} -taskConfigPath ${taskConfigPath}"
+[CimInstance] ${action} = New-ScheduledTaskAction -WorkingDirectory $(Get-Location) -Execute ${shell} -Argument ${argument}
+[CimInstance] ${settings} = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries
+[CimInstance] ${trigger} = New-ScheduledTaskTrigger -AtLogOn -User "${userId}"
+[CimInstance] ${task} = New-ScheduledTask -Action ${action} -Settings ${settings} -Principal ${principal} -Trigger ${trigger} -Description "${taskDescription}"
+Register-ScheduledTask ${taskId} -InputObject ${task}
 
-[hashtable[]] ${arr} = @(
+[hashtable[]] ${tasksOrdered} = @(
     @{
-        'time' = [string]${lightModeStart}
-        'f'    = [scriptblock] {
-            Start-ScheduledTask -TaskName ${taskIdLightMode}
-        }
+        'time'     = ${lightModeStart}
+        'taskName' = ${taskIdLightMode}
     }
     @{
-        'time' = [string]${darkModeStart}
-        'f'    = [scriptblock] {
-            Start-ScheduledTask -TaskName ${taskIdDarkMode}
-        }
+        'time'     = ${darkModeStart}
+        'taskName' = ${taskIdDarkMode}
     }
-)
+) | Sort-Object -Property time
 
-[hashtable[]] ${bounds} = ${arr} | Sort-Object -Property time
-[datetime[]] ${boundsTime} = ${arr} | ForEach-Object { ${_}['time'] }
-[scriptblock] ${f} = ${bounds}[1]['f']
-
-if (${time} -gt ${boundsTime}[0] -and ${time} -lt ${boundsTime}[1]) {
-    ${f} = ${bounds}[0]['f']
+[hashtable] ${config} = @{
+    'tasksOrdered' = ${tasksOrdered}
+    'tasks'        = @(${taskIdLightMode}, ${taskIdDarkMode}, ${taskIdSync})
 }
 
-Invoke-Command ${f}
+${config} | ConvertTo-Json | Out-File ${taskConfigPath}
+
+Start-ScheduledTask -TaskName ${taskIdSync}

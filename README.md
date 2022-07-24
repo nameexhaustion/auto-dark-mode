@@ -3,11 +3,11 @@
 ### Installation
 
 ```powershell
-# Install
+# (Requires admin) Install
 .\auto_dark_mode\InstallTask.ps1
 
 # Remove
-.\auto_dark_mode\RemoveTask.ps1
+.\auto_dark_mode\UninstallTask.ps1
 ```
 
 ### Manual run
