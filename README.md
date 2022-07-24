@@ -8,7 +8,6 @@
 
 # Remove
 .\auto_dark_mode\RemoveTask.ps1
-
 ```
 
 ### Manual run
