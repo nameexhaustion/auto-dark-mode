@@ -38,7 +38,7 @@ Register-ScheduledTask ${taskId} -InputObject ${task}
 [CimInstance] ${task} = New-ModeTask -modeInt 0 -time ${time} -taskDescription ${taskDescription}
 Register-ScheduledTask ${taskId} -InputObject ${task}
 
-[datetime] ${time} = (Get-Date).AddMinutes(1)
+[datetime] ${time} = Get-Date
 
 [hashtable[]] ${arr} = @(
     @{
