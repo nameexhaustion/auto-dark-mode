@@ -6,7 +6,7 @@ param (
 )
 
 . auto_dark_mode/Configs.ps1
-./auto_dark_mode/RemoveTask.ps1
+./auto_dark_mode/UninstallTask.ps1
 
 function New-ModeTask {
     [CmdletBinding()]
