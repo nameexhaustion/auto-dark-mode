@@ -1,9 +1,11 @@
-. auto_dark_mode/Configs.ps1
+[CmdletBinding()]
+param (
+    [string] ${taskConfigPath} = 'private/config.json'
+)
 
-[ScriptBlock] ${f} = {
-    Unregister-ScheduledTask -Confirm:${false} ${taskIdLightMode}
-    Unregister-ScheduledTask -Confirm:${false} ${taskIdDarkMode}
+${taskConfig} = Get-Content ${taskConfigPath} | ConvertFrom-Json
+
+${taskConfig}.tasks | ForEach-Object {
+    Write-Output "Unregister ${_}"
+    Unregister-ScheduledTask -Confirm:${false} ${_}
 }
-
-Write-Output ${f}
-Invoke-Command ${f}

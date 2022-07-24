@@ -1,5 +1,7 @@
+[CmdletBinding()]
 param (
-    [Parameter(Mandatory)] [bool] ${mode}
+    [Parameter(Mandatory)]
+    [bool] ${mode}
 )
 
 function Set-SystemDarkMode {
