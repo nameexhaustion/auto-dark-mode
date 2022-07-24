@@ -1,8 +1,8 @@
 param (
     [string] ${shell} = 'powershell.exe',
     [string] ${updateModeScriptPath} = "$(Get-Location)/auto_dark_mode/UpdateMode.ps1",
-    [datetime] ${timeLightMode} = '09:00',
-    [datetime] ${timeDarkMode} = '17:00'
+    [datetime] ${lightModeStart} = '09:00',
+    [datetime] ${darkModeStart} = '17:00'
 )
 
 . auto_dark_mode/Configs.ps1
@@ -26,13 +26,13 @@ function New-ModeTask {
     return ${task}
 }
 
-[datetime] ${time} = ${timeLightMode}
+[datetime] ${time} = ${lightModeStart}
 [string] ${taskId} = ${taskIdLightMode}
 [string] ${taskDescription} = "Set light mode at ${time}"
 [CimInstance] ${task} = New-ModeTask -modeInt 1 -time ${time} -taskDescription ${taskDescription}
 Register-ScheduledTask ${taskId} -InputObject ${task}
 
-[datetime] ${time} = ${timeDarkMode}
+[datetime] ${time} = ${darkModeStart}
 [string] ${taskId} = ${taskIdDarkMode}
 [string] ${taskDescription} = "Set dark mode at ${time}"
 [CimInstance] ${task} = New-ModeTask -modeInt 0 -time ${time} -taskDescription ${taskDescription}
@@ -43,13 +43,13 @@ Register-ScheduledTask ${taskId} -InputObject ${task}
 
 [hashtable[]] ${arr} = @(
     @{
-        'time' = [string]${timeLightMode}
+        'time' = [string]${lightModeStart}
         'f'    = [scriptblock] {
             Start-ScheduledTask -TaskName ${taskIdLightMode}
         }
     }
     @{
-        'time' = [string]${timeDarkMode}
+        'time' = [string]${darkModeStart}
         'f'    = [scriptblock] {
             Start-ScheduledTask -TaskName ${taskIdDarkMode}
         }
