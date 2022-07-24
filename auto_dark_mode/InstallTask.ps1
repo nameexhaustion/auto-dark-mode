@@ -38,7 +38,6 @@ Register-ScheduledTask ${taskId} -InputObject ${task}
 [CimInstance] ${task} = New-ModeTask -modeInt 0 -time ${time} -taskDescription ${taskDescription}
 Register-ScheduledTask ${taskId} -InputObject ${task}
 
-[string] ${taskName} = ${taskIdDarkMode}
 [datetime] ${time} = (Get-Date).AddMinutes(1)
 
 [hashtable[]] ${arr} = @(
