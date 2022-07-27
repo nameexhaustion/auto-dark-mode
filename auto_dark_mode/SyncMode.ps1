@@ -6,8 +6,8 @@ param (
 ${taskConfig} = Get-Content ${taskConfigPath} | ConvertFrom-Json
 ${tasksOrdered} = ${taskConfig}.tasksOrdered
 
-[datetime] ${time} = Get-Date
-[datetime[]] ${boundsTime} = ${tasksOrdered} | ForEach-Object { ${_}.time }
+[timespan] ${time} = (Get-Date).TimeOfDay
+[timespan[]] ${boundsTime} = ${tasksOrdered} | ForEach-Object { ([datetime]${_}.time).timeofday }
 [string] ${taskName} = ${tasksOrdered}[1].taskName
 
 if (${time} -gt ${boundsTime}[0] -and ${time} -lt ${boundsTime}[1]) {
